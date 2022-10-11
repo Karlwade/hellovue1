@@ -5,7 +5,10 @@
       <el-table :data="tableData" border style="width: 100%">
         <el-table-column header-align="center" prop="itemName" label="案件名">
           <template slot-scope="{ row, $index }">
-            <el-input v-if="ticketsIndex == $index" v-model="row.itemName"></el-input>
+            <el-input
+              v-if="ticketsIndex == $index"
+              v-model="row.itemName"
+            ></el-input>
             <span v-if="ticketsIndex != $index">{{ row.itemName }}</span>
           </template>
         </el-table-column>
@@ -26,7 +29,10 @@
         </el-table-column>
         <el-table-column header-align="center" prop="value" label="金额">
           <template slot-scope="{ row, $index }">
-            <el-input v-if="ticketsIndex == $index" v-model="row.value"></el-input>
+            <el-input
+              v-if="ticketsIndex == $index"
+              v-model="row.value"
+            ></el-input>
             <span v-if="ticketsIndex != $index">{{ row.value }}</span>
           </template>
         </el-table-column>
@@ -46,7 +52,10 @@
               size="small"
               >编辑
             </el-button>
-            <el-button @click="ticketsClick($index, 'delete')" type="text" size="small"
+            <el-button
+              @click="ticketsClick($index, 'delete')"
+              type="text"
+              size="small"
               >移除</el-button
             >
           </template>
@@ -56,20 +65,52 @@
         <br />
         <el-button type="primary" plain @click="addTickets">添加记录</el-button>
         <el-button type="primary" plain @click="calculate">计算结果</el-button>
+        <el-button type="primary" plain @click="dialogVisible = true"
+          >导入数据</el-button
+        >
       </div>
-      <el-descriptions title="计算数据" border="true" column=2>
-        <el-descriptions-item label="收入总额">{{ totalResult }}</el-descriptions-item>
-        <el-descriptions-item label="单位抽成">{{ coopValue }}</el-descriptions-item>
-        <el-descriptions-item label="归档费用">{{ dangValue }}</el-descriptions-item>
-        <el-descriptions-item label="崔工资+社保">{{ cuiOut }}</el-descriptions-item>
-        <el-descriptions-item label="黄社保">{{ huangOut }}</el-descriptions-item>
-        <el-descriptions-item label="黄其它成本"><el-input v-model="huangOtherOut"></el-input></el-descriptions-item>
-        <el-descriptions-item label="章社保">{{ zhangOut }}</el-descriptions-item>
-        <el-descriptions-item label="章其它成本"><el-input v-model="zhangOtherOut"></el-input></el-descriptions-item>
+      <el-dialog title="导入数据" :visible.sync="dialogVisible">
+        <el-input v-model="importValue" type="textarea" :rows="5"></el-input>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="dialogVisible = false">取 消</el-button>
+          <el-button type="primary" @click="importData"
+            >确 定</el-button
+          >
+        </div>
+      </el-dialog>
+      <el-descriptions title="计算数据" border="true" column="2">
+        <el-descriptions-item label="收入总额">{{
+          totalResult
+        }}</el-descriptions-item>
+        <el-descriptions-item label="单位抽成">{{
+          coopValue
+        }}</el-descriptions-item>
+        <el-descriptions-item label="归档费用">{{
+          dangValue
+        }}</el-descriptions-item>
+        <el-descriptions-item label="崔工资+社保">{{
+          cuiOut
+        }}</el-descriptions-item>
+        <el-descriptions-item label="黄社保">{{
+          huangOut
+        }}</el-descriptions-item>
+        <el-descriptions-item label="黄其它成本"
+          ><el-input v-model="huangOtherOut"></el-input
+        ></el-descriptions-item>
+        <el-descriptions-item label="章社保">{{
+          zhangOut
+        }}</el-descriptions-item>
+        <el-descriptions-item label="章其它成本"
+          ><el-input v-model="zhangOtherOut"></el-input
+        ></el-descriptions-item>
       </el-descriptions>
-      <el-descriptions title="计算结果" border="true" column=1>
-        <el-descriptions-item label="黄应收">{{ huangReceive }}</el-descriptions-item>
-        <el-descriptions-item label="章应收">{{ zhangReceive }}</el-descriptions-item>
+      <el-descriptions title="计算结果" border="true" column="1">
+        <el-descriptions-item label="黄应收">{{
+          huangReceive
+        }}</el-descriptions-item>
+        <el-descriptions-item label="章应收">{{
+          zhangReceive
+        }}</el-descriptions-item>
       </el-descriptions>
     </el-main>
   </el-container>
@@ -97,7 +138,9 @@ export default {
       huangOut: 1469.49,
       huangOtherOut: 0,
       zhangOut: 1470.48,
-      zhangOtherOut: 0
+      zhangOtherOut: 0,
+      dialogVisible: false,
+      importValue: ''
     }
   },
   created: function () {
@@ -133,6 +176,22 @@ export default {
         this.$message.warning('已经存在一条空数据了!') // 失败提示后端返回消息
       }
     },
+    importData () {
+      this.tableData = []
+      this.dialogVisible = false
+      var lines = this.importValue.trim().split('\n')
+      lines.forEach((v) => {
+        var values = v.trim().split('\t')
+        if (values.length === 3) {
+          var obj = {}
+          obj.itemName = values[0]
+          obj.name = values[2]
+          obj.value = values[1]
+          this.tableData.push(obj)
+        }
+        this.ticketsIndex = null
+      })
+    },
     calculate () {
       var sum = 0
       var huang = 0
@@ -152,8 +211,16 @@ export default {
       this.totalResult = sum
       this.coopValue = parseFloat(sum) * parseFloat(0.4)
       this.dangValue = parseFloat(sum) * parseFloat(0.03)
-      this.zhangReceive = parseFloat(zhang) - parseFloat(this.cuiOut) * parseFloat(0.5) - parseFloat(this.zhangOut) - parseFloat(this.zhangOtherOut)
-      this.huangReceive = parseFloat(huang) - parseFloat(this.cuiOut) * parseFloat(0.5) - parseFloat(this.huangOut) - parseFloat(this.huangOtherOut)
+      this.zhangReceive =
+        parseFloat(zhang) -
+        parseFloat(this.cuiOut) * parseFloat(0.5) -
+        parseFloat(this.zhangOut) -
+        parseFloat(this.zhangOtherOut)
+      this.huangReceive =
+        parseFloat(huang) -
+        parseFloat(this.cuiOut) * parseFloat(0.5) -
+        parseFloat(this.huangOut) -
+        parseFloat(this.huangOtherOut)
     }
   },
   watch: {
